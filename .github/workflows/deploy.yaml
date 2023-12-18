@@ -11,37 +11,34 @@ env:
   environment: "qa"
 
 jobs:
-  PrintJob-1:
+  Terraform-Deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Print Something 1st Time
-        run: |
-          echo "Printing from Job-1"
-      - name: Get Date
-        id: get-date
-        if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-        run: |
-          echo "time_value=$(date)" >> $GITHUB_OUTPUT
-          sleep 10s
-    outputs:
-      time_value: ${{ steps.get-date.outputs.time_value }}
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
-  PrintJob-2:
-    if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-    needs:
-      - PrintJob-1
-    runs-on: ubuntu-latest
-    environment: Staging
-    steps:
-      - name: Print Something
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: "eu-central-1"
+          role-to-assume: "arn:aws:iam::510769981514:role/GitHubActionsDeploymentRole"
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
         run: |
-          echo "Hello from the Base. Is-Main-Pipeline: ${{ inputs.is_main_pipeline }}"
-      - name: Wait a few seconds
+          if [ -d ".terraform" ]; then
+            echo "Removing .terraform..."
+            rm -rf .terraform
+          fi
+          terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform
         run: |
-          sleep 10
-      - name: Apply Changes
-        if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-        run: |
-          sleep 10
-          echo "Current time = $(date)"
-          echo "Time from last Job=${{ needs.PrintJob-1.outputs.time_value }}"
+          terraform plan -out tfplan
