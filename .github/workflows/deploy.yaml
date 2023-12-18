@@ -14,7 +14,7 @@ permissions:
   id-token: write
   contents: read
 
-  jobs:
+jobs:
   Terraform-Deploy:
     runs-on: ubuntu-latest
     steps:
