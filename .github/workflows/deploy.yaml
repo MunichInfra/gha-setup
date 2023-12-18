@@ -1,0 +1,47 @@
+name: "Deploy Infrastructure"
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: main
+    types: [opened, reopened, synchronize]
+  push:
+    branches: main
+
+env:
+  environment: "qa"
+
+jobs:
+  PrintJob-1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Something 1st Time
+        run: |
+          echo "Printing from Job-1"
+      - name: Get Date
+        id: get-date
+        if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        run: |
+          echo "time_value=$(date)" >> $GITHUB_OUTPUT
+          sleep 10s
+    outputs:
+      time_value: ${{ steps.get-date.outputs.time_value }}
+
+  PrintJob-2:
+    if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+    needs:
+      - PrintJob-1
+    runs-on: ubuntu-latest
+    environment: Staging
+    steps:
+      - name: Print Something
+        run: |
+          echo "Hello from the Base. Is-Main-Pipeline: ${{ inputs.is_main_pipeline }}"
+      - name: Wait a few seconds
+        run: |
+          sleep 10
+      - name: Apply Changes
+        if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        run: |
+          sleep 10
+          echo "Current time = $(date)"
+          echo "Time from last Job=${{ needs.PrintJob-1.outputs.time_value }}"
