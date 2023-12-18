@@ -20,9 +20,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          aws-region: "eu-central-1"
+          aws-region: "eu-west-2"
           role-to-assume: "arn:aws:iam::510769981514:role/GitHubActionsDeploymentRole"
 
       - uses: hashicorp/setup-terraform@v2
