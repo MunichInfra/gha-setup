@@ -1,14 +1,7 @@
 name: "Deploy Infrastructure"
 on:
-  workflow_dispatch:
-  pull_request:
-    branches: main
-    types: [opened, reopened, synchronize]
   push:
     branches: main
-
-env:
-  environment: "qa"
 
 permissions:
   id-token: write
@@ -34,13 +27,14 @@ jobs:
       - name: Terraform Init
         working-directory: terraform
         run: |
-          if [ -d ".terraform" ]; then
-            echo "Removing .terraform..."
-            rm -rf .terraform
-          fi
           terraform init
 
       - name: Terraform Plan
         working-directory: terraform
         run: |
           terraform plan -out tfplan
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: |
+          terraform apply tfplan
